@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>DELTA SUPREME SYSTEM</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@400;700&display=swap');
+        :root { --cyan: #00f2ff; --gold: #ffcc00; --red: #ff3131; --bg: #050508; }
+        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg); color: #fff; margin: 0; padding: 10px; text-align: center; overflow-x: hidden; }
+        .orb { font-family: 'Orbitron', sans-serif; }
+        .box { max-width: 450px; margin: auto; border: 2px solid var(--red); border-radius: 20px; padding: 15px; background: #000; box-shadow: 0 0 20px rgba(255,49,49,0.3); margin-bottom: 15px; }
+        input { width: 90%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; text-align: center; font-size: 15px; }
+        button { border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; width: 100%; font-size: 14px; transition: 0.2s; }
+        .btn-t { background: var(--red); color: #fff; }
+        .btn-x { background: var(--cyan); color: #000; }
+        .btn-gold { background: var(--gold); color: #000; }
+        
+        .page { display: none; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #adm-panel { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; padding: 20px; overflow-y: auto; text-align: left; }
+        .adm-card { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
+        .bet-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #222; }
+        .stat-line { font-size: 11px; color: #999; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-page" class="page" style="display:block; margin-top:60px;">
+        <h1 class="orb" style="color:var(--red); font-size:40px;">DELTA</h1>
+        <div class="box" style="border:none;">
+            <input type="text" id="l-u" placeholder="Tên tài khoản">
+            <input type="password" id="l-p" placeholder="Mật khẩu">
+            <button class="btn-t" onclick="auth('login')">ĐĂNG NHẬP</button>
+            <p style="font-size:13px; margin-top:20px;">Chưa có tài khoản? <span onclick="showPage('reg-page')" style="color:var(--cyan); cursor:pointer">Đăng ký ngay</span></p>
+        </div>
+    </div>
+
+    <div id="reg-page" class="page" style="margin-top:60px;">
+        <h1 class="orb" style="color:var(--cyan); font-size:40px;">JOIN</h1>
+        <div class="box" style="border-color:var(--cyan)">
+            <input type="text" id="r-u" placeholder="Tên tài khoản mới">
+            <input type="password" id="r-p" placeholder="Mật khẩu bảo mật">
+            <button class="btn-x" onclick="auth('reg')">TẠO TÀI KHOẢN</button>
+            <p onclick="showPage('login-page')" style="font-size:13px; margin-top:20px; cursor:pointer">Đã có tài khoản? Đăng nhập</p>
+        </div>
+    </div>
+
+    <div id="game-page" class="page">
+        <div class="box">
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <span>👤 <b id="u-id"></b></span>
+                <span style="color:var(--cyan)">VÍ: <b id="u-bl">0</b>đ</span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                <button class="btn-gold" style="padding:5px;" onclick="openNap()">NẠP TIỀN</button>
+                <button class="btn-x" style="padding:5px;" onclick="openModal('rut-modal')">RÚT TIỀN</button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #111, #000); border: 1px dashed var(--gold); border-radius: 15px; padding: 12px; margin: 15px 0;">
+                <h4 class="orb" style="color:var(--gold); margin:0; font-size:14px;">🎁 VÒNG QUAY MAY MẮN</h4>
+                <p id="spin-cost-txt" style="font-size:10px; color:#666; margin:5px 0;"></p>
+                <button class="btn-gold" style="padding:8px; font-size:12px;" onclick="luckySpin()">THỬ VẬN MAY</button>
+            </div>
+
+            <div class="orb" id="timer" style="font-size:32px; color:var(--gold); margin-bottom:10px;">30</div>
+            <div id="dice-area" style="font-size:45px;">🎲🎲🎲</div>
+            <div id="res-text" style="color:var(--gold); font-weight:bold; height:25px;"></div>
+            
+            <input type="number" id="bet-amt" placeholder="Nhập tiền cược...">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="btn-t" onclick="placeBet('tai')">TÀI</button>
+                <button class="btn-x" onclick="placeBet('xiu')">XỈU</button>
+            </div>
+            <div id="my-bet-info" style="font-size:11px; margin-top:10px; color:var(--gold); font-style:italic;"></div>
+        </div>
+    </div>
+
+    <div id="nap-modal" class="page" style="position:fixed; inset:0; background:#000; z-index:2000; padding:20px;">
+        <h2 class="orb" style="color:var(--gold)">NẠP TIỀN</h2>
+        <img src="https://api.vietqr.io/image/970422-0393437651-O2X0VpW.jpg" style="width:220px; border-radius:15px; margin-bottom:15px;">
+        <div class="box" style="border-color:#333">
+            <p style="color:var(--gold); font-weight:bold;">Nội dung: <span id="nap-memo"></span></p>
+            <input type="number" id="nap-val" placeholder="Số tiền đã chuyển">
+            <button class="btn-gold" onclick="sendNap()">GỬI YÊU CẦU</button>
+        </div>
+        <button onclick="closeModal('nap-modal')" style="background:#222; margin-top:10px;">ĐÓNG</button>
+    </div>
+
+    <div id="rut-modal" class="page" style="position:fixed; inset:0; background:#000; z-index:2000; padding:20px;">
+        <h2 class="orb" style="color:var(--cyan)">RÚT TIỀN</h2>
+        <div class="box" style="border-color:#333; margin-top:20px;">
+            <input type="number" id="rut-amt" placeholder="Số tiền (50k - 3M)">
+            <input type="text" id="rut-stk" placeholder="Số tài khoản">
+            <input type="text" id="rut-bank" placeholder="Ngân hàng">
+            <button class="btn-x" onclick="sendRut()">GỬI LỆNH RÚT</button>
+        </div>
+        <button onclick="closeModal('rut-modal')" style="background:#222;">QUAY LẠI</button>
+    </div>
+
+    <button id="adm-btn" onclick="document.getElementById('adm-panel').style.display='block'" style="position:fixed; bottom:20px; right:20px; width:45px; height:45px; border-radius:50%; background:red; display:none; border:2px solid #fff; z-index:9998;">👑</button>
+
+    <div id="adm-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 class="orb" style="color:var(--red); margin:0;">QUẢN TRỊ</h2>
+            <button onclick="document.getElementById('adm-panel').style.display='none'" style="width:40px; background:#333;">X</button>
+        </div>
+
+        <div class="adm-card">
+            <h4 style="color:var(--gold); margin:0 0 10px 0;">⚙️ CÀI ĐẶT RANDOM TIỀN</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                <input type="number" id="adm-spin-price" placeholder="Giá quay">
+                <input type="number" id="adm-spin-rate" placeholder="Tỉ lệ % trúng">
+                <input type="number" id="adm-spin-min" placeholder="Min trúng">
+                <input type="number" id="adm-spin-max" placeholder="Max trúng">
+            </div>
+            <button class="btn-gold" style="margin-top:10px;" onclick="saveSettings()">LƯU CÀI ĐẶT</button>
+        </div>
+
+        <div class="adm-card">
+            <h4 style="color:var(--cyan); margin:0 0 10px 0;">👥 SOI KHÁCH & CRM</h4>
+            <div id="adm-user-list"></div>
+        </div>
+
+        <div class="adm-card">
+            <h4 style="color:var(--gold); margin:0 0 10px 0;">💰 DUYỆT/HỦY NẠP</h4>
+            <div id="adm-nap-list"></div>
+        </div>
+
+        <div class="adm-card">
+            <h4 style="color:var(--red); margin:0;">🎲 ÉP CẦU</h4>
+            <select id="adm-tx" style="width:100%; padding:10px; background:#000; color:#fff; border:1px solid #444; margin:10px 0;">
+                <option value="">Ngẫu nhiên</option><option value="tai">ÉP RA TÀI</option><option value="xiu">ÉP RA XỈU</option>
+            </select>
+            <button class="btn-t" onclick="db.ref('system/casino_control/next').set(document.getElementById('adm-tx').value).then(()=>alert('Đã khóa cầu!'))">LƯU CẦU</button>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://shopmduy-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let curU, userD = {}, timeLeft = 30, myBetSide = null, myBetAmt = 0, sysS = {};
+
+    function showPage(id) { document.querySelectorAll('.page').forEach(p=>p.style.display='none'); document.getElementById(id).style.display='block'; }
+    function openModal(id) { document.getElementById(id).style.display='block'; }
+    function closeModal(id) { document.getElementById(id).style.display='none'; }
+
+    function auth(type) {
+        const u = type==='login' ? document.getElementById('l-u').value.trim().toLowerCase() : document.getElementById('r-u').value.trim().toLowerCase();
+        const p = type==='login' ? document.getElementById('l-p').value : document.getElementById('r-p').value;
+        if(u.length < 3) return alert("Tên quá ngắn!");
+        if(type==='reg') {
+            db.ref('users/'+u).once('value', s => {
+                if(s.exists()) return alert("Tên đã tồn tại!");
+                db.ref('users/'+u).set({password:p, balance:0, role:'user', total_dep:0, total_win:0, total_lose:0}).then(()=> { alert("Đã đăng ký!"); showPage('login-page'); });
+            });
+        } else {
+            db.ref('users/'+u).once('value', s => {
+                const d = s.val();
+                if(d && d.password===p) {
+                    curU = u; showPage('game-page');
+                    document.getElementById('u-id').innerText = u.toUpperCase();
+                    if(d.role==='admin') document.getElementById('adm-btn').style.display='block';
+                    db.ref('users/'+u).on('value', snap => { userD = snap.val(); document.getElementById('u-bl').innerText = (userD.balance||0).toLocaleString(); });
+                    initSystem();
+                } else alert("Sai thông tin!");
+            });
+        }
+    }
+
+    function initSystem() {
+        // Cài đặt Random tiền
+        db.ref('system/settings').on('value', s => {
+            sysS = s.val() || { spin_price: 20000, spin_rate: 10, spin_min: 5000, spin_max: 50000 };
+            document.getElementById('spin-cost-txt').innerText = `Giá: ${sysS.spin_price.toLocaleString()}đ / lượt`;
+            document.getElementById('adm-spin-price').value = sysS.spin_price;
+            document.getElementById('adm-spin-rate').value = sysS.spin_rate;
+            document.getElementById('adm-spin-min').value = sysS.spin_min;
+            document.getElementById('adm-spin-max').value = sysS.spin_max;
+        });
+
+        // Duyệt Nạp & Hủy
+        db.ref('bank_requests').on('value', s => {
+            const list = document.getElementById('adm-nap-list'); list.innerHTML = "";
+            s.forEach(c => {
+                const r = c.val();
+                if(r.status==='pending') {
+                    list.innerHTML += `<div class="bet-row"><span>${r.user}: ${r.amount.toLocaleString()}</span> 
+                    <div><button onclick="approveNap('${c.key}','${r.user}',${r.amount})" style="background:green; width:40px; padding:3px;">V</button>
+                    <button onclick="db.ref('bank_requests/${c.key}').remove()" style="background:red; width:40px; padding:3px; margin-left:5px;">X</button></div></div>`;
+                }
+            });
+        });
+
+        // CRM Thống kê & Soi khách real-time
+        db.ref('users').on('value', s => {
+            const list = document.getElementById('adm-user-list'); list.innerHTML = "";
+            s.forEach(c => {
+                const u = c.val();
+                list.innerHTML += `<div style="padding:8px; border-bottom:1px solid #222;">
+                    <b style="color:var(--cyan)">${c.key.toUpperCase()}</b> | Ví: ${u.balance.toLocaleString()}đ
+                    <div class="stat-line">Nạp: ${ (u.total_dep||0).toLocaleString() } | Thắng: <span style="color:lime">${ (u.total_win||0).toLocaleString() }</span> | Thua: <span style="color:red">${ (u.total_lose||0).toLocaleString() }</span></div>
+                </div>`;
+            });
+        });
+
+        setInterval(() => {
+            timeLeft--;
+            if(timeLeft < 0) { timeLeft = 35; resetGame(); }
+            document.getElementById('timer').innerText = timeLeft > 30 ? "MỞ" : timeLeft;
+            if(timeLeft === 0) openResult();
+        }, 1000);
+    }
+
+    function openNap() { document.getElementById('nap-memo').innerText = curU.toUpperCase(); openModal('nap-modal'); }
+
+    function sendNap() {
+        const val = Number(document.getElementById('nap-val').value);
+        if(val < 10000) return alert("Nạp tối thiểu 10k!");
+        db.ref('bank_requests').push({ user: curU, amount: val, status: 'pending' }).then(()=> { alert("Đã gửi!"); closeModal('nap-modal'); });
+    }
+
+    function approveNap(key, user, amount) {
+        db.ref('users/'+user+'/balance').transaction(v => (v||0) + amount);
+        db.ref('users/'+user+'/total_dep').transaction(v => (v||0) + amount);
+        db.ref('bank_requests/'+key).update({ status: 'approved' });
+    }
+
+    function luckySpin() {
+        const p = Number(sysS.spin_price);
+        if(userD.balance < p) return alert("Không đủ tiền quay!");
+        db.ref('users/'+curU+'/balance').transaction(v => v - p);
+        const rate = Number(sysS.spin_rate);
+        if((Math.random()*100) <= rate) {
+            const win = Math.floor(Math.random() * (sysS.spin_max - sysS.spin_min + 1)) + Number(sysS.spin_min);
+            db.ref('users/'+curU+'/balance').transaction(v => (v||0) + win);
+            db.ref('users/'+curU+'/total_win').transaction(v => (v||0) + win);
+            confetti(); alert(`TRÚNG ${win.toLocaleString()}đ !`);
+        } else {
+            db.ref('users/'+curU+'/total_lose').transaction(v => (v||0) + p);
+            alert("Chúc bạn may mắn lần sau!");
+        }
+    }
+
+    function placeBet(side) {
+        if(timeLeft < 5 || timeLeft > 30) return alert("Đã khóa cược!");
+        if(myBetSide && myBetSide !== side) return alert("Chỉ được đặt 1 bên!");
+        const a = Number(document.getElementById('bet-amt').value);
+        if(a < 1000 || userD.balance < a) return alert("Tiền không đủ!");
+        db.ref('users/'+curU+'/balance').set(userD.balance - a);
+        myBetSide = side; myBetAmt += a;
+        document.getElementById('my-bet-info').innerText = `ĐÃ ĐẶT ${side.toUpperCase()}: ${myBetAmt.toLocaleString()}đ`;
+        db.ref('live_detail/'+curU).set({ u: curU, c: side, a: myBetAmt });
+        db.ref('live_summary/'+side).transaction(v => (v||0) + a);
+    }
+
+    function openResult() {
+        db.ref('system/casino_control').once('value', s => {
+            const ctrl = s.val() || {}; let target = ctrl.next;
+            let d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1, d3=Math.floor(Math.random()*6)+1;
+            let res = (d1+d2+d3) >= 11 ? 'tai' : 'xiu';
+            if(target && res !== target) { if(target==='tai') {d1=4;d2=5;d3=6;} else {d1=1;d2=2;d3=3;} res = target; }
+            document.getElementById('dice-area').innerHTML = res==='tai'?'⚄⚅⚃':'⚀⚁⚂';
+            document.getElementById('res-text').innerText = res.toUpperCase();
+            if(myBetSide) {
+                if(myBetSide === res) {
+                    db.ref('users/'+curU+'/balance').transaction(v => (v||0) + (myBetAmt*2));
+                    db.ref('users/'+curU+'/total_win').transaction(v => (v||0) + (myBetAmt*2));
+                    confetti();
+                } else db.ref('users/'+curU+'/total_lose').transaction(v => (v||0) + myBetAmt);
+            }
+            db.ref('live_detail').remove(); db.ref('live_summary').set({tai:0, xiu:0});
+            if(target) db.ref('system/casino_control/next').remove();
+        });
+    }
+
+    function resetGame() { myBetSide = null; myBetAmt = 0; document.getElementById('my-bet-info').innerText = ""; document.getElementById('dice-area').innerHTML = "🎲🎲🎲"; document.getElementById('res-text').innerText = ""; }
+    
+    function saveSettings() {
+        db.ref('system/settings').update({
+            spin_price: Number(document.getElementById('adm-spin-price').value),
+            spin_rate: Number(document.getElementById('adm-spin-rate').value),
+            spin_min: Number(document.getElementById('adm-spin-min').value),
+            spin_max: Number(document.getElementById('adm-spin-max').value)
+        }).then(()=>alert("Đã lưu!"));
+    }
+
+    function sendRut() {
+        const a = Number(document.getElementById('rut-amt').value);
+        const stk = document.getElementById('rut-stk').value;
+        const b = document.getElementById('rut-bank').value;
+        if(a < 50000 || a > 3000000 || !stk || !b) return alert("Lỗi thông tin!");
+        if(userD.balance < a) return alert("Không đủ tiền!");
+        db.ref('users/'+curU+'/balance').set(userD.balance - a);
+        db.ref('withdraw_requests').push({ user: curU, amount: a, stk: stk, bank: b, status: 'pending' });
+        alert("Đã gửi yêu cầu rút!"); closeModal('rut-modal');
+    }
+</script>
+</body>
+</html>
